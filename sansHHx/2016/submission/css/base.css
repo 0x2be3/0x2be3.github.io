@@ -12,6 +12,7 @@ body{
     font-family: monospace;
     font-size: 14px;
     font-weight: 100;
+    overflow-x:hidden;
 }
 hr{
     border: none;
@@ -67,12 +68,12 @@ img{
 @media(max-width: 768px){
  pre.header-ascii{
   color: #f90;
-  font-size: 0.5em;
+  font-size: 0.45em;
  } 
 }
 @media(max-width: 690px){
  pre.header-ascii{
   color: #f90;
-  font-size: 0.45em;
+  font-size: 0.35em;
  } 
 }
