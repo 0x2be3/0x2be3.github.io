@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>
+        2016 SANS Holiday Hack Submission
+    </title>
+    <link rel="stylesheet" type="text/css" href="css/base.css">
+</head>
+<body>
+<div class="wrapper">
+  <pre class="header-ascii">
+
+  ___       ____  _          _____    ____  _    _  __                                             
+ / _ \__  _|___ \| |__   ___|___ /_  |___ \| | _/ |/ /_    ___  __ _ _ __  ___   /\  /\/\  /\__  __
+| | | \ \/ / __) | '_ \ / _ \ |_ (_)   __) | |/ / | '_ \  / __|/ _` | '_ \/ __| / /_/ / /_/ /\ \/ /
+| |_| |>  < / __/| |_) |  __/___) |   / __/|   <| | (_) | \__ \ (_| | | | \__ \/ __  / __  /  >  < 
+ \___//_/\_\_____|_.__/ \___|____(_) |_____|_|\_\_|\___/  |___/\__,_|_| |_|___/\/ /_/\/ /_/  /_/\_\
+  </pre>
+  
+  <hr/>
+  <p>
+    To begin, I want to thank everyone who is responsible for making this 2k16 Challenge. It was such an amazing learning and social experience, the art and music are incredible. Thank you so much SANS! 
+    </p>
+    <p>
+    I also want to give a huge thanks to the freenode #holidayhack crew. rand0macc3ss, Cat, TheRealSargento, pahtzo, GilGrenade and OS123 in no particular order, you are all amazing! The proverbial icing. The cherry on top. Thank you so much friends. You helped to steer me from a few key rabbit holes while respecting the no spoilers rule and just generally helped in making this whole experience even more fun than it already was. You are all winners in my book and I feel lucky to have met all of you.
+  </p>
+  <hr/>
+<!--   <iframe src="https://player.vimeo.com/video/197995370?title=0&amp;byline=0&amp;portrait=0&amp;autoplay=false&amp;loop=1&amp;autopause=1&amp;color=00ff00" width="100%" height="467" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
+ -->
+  <!-- <iframe
+  frameborder="0"
+  width="100%"
+  height="467"
+  src="http://player.vimeo.com/video/149658137?title=0&amp;byline=0&amp;portrait=0&amp;autoplay=false&amp;loop=1&amp;autopause=1&amp;color=00ff00"
+></iframe> -->
+  <article class="challenge-item">
+    <div class="challenge-item__title">
+        1) What is the secret message in Santa's tweets?
+    </div>
+    <div class="challenge-item__body">
+        <img src="images/tweets-rot.png"/>
+        <p>
+          rotated screenshot of csv output
+        </p>
+        <p>
+          For this I used a twitter python script I had already written with a few modifications via another script I found on github which allowed me to skip the twitter max dump result in their api so I could grab all user tweets in one go. Totally blatantly and beautifully right there in front of me:
+        </p>
+        <div class="code">
+            BUG BOUNTY
+        </div>
+    </div>
+  </article>
+  <hr/>
+  <article class="challenge-item">
+    <div class="challenge-item__title">
+        2) What is inside the ZIP file distributed by Santa's team?
+    </div>
+    <div class="challenge-item__body">
+        <div class="code">
+            SantaGram_v4.2.apk
+        </div>
+    </div>
+  </article>
+
+
+  <hr/>
+
+  <article class="challenge-item">
+    <div class="challenge-item__title">
+        3) What username and password are embedded in the APK file?
+    </div>
+    <div class="challenge-item__body">
+    	<img src="images/apk-jadx.png"/>
+        <p>
+          I used jadX to decompile and search the apk file for obvious keywords like "user" & "password". Pretty quickly I found both:
+        </p>
+        <div class="code">
+            jSONObject.put("username","guest")<br/>
+            jSONObject.put("password","busyreindeer78")
+        </div>
+    </div>
+  </article>  
+
+  <hr/>
+
+  <article class="challenge-item">
+    <div class="challenge-item__title">
+        4) What is the name of the audible component (audio file) in the SantaGram APK file?
+    </div>
+    <div class="challenge-item__body">
+        <p>
+          I used jadX to search for audio files as well since I knew ahead of time that audio files played a part in the challenge. I found the first one in the "Resources/res/raw/" directory:
+        </p>
+        <div class="code">
+            discombobulatedaudio1.mp3
+        </div>
+    </div>
+  </article> 
+
+  <hr/>
+
+  <article class="challenge-item">
+    <div class="challenge-item__title">
+        5) What is the password for the "cranpi" account on the Cranberry Pi system?
+    </div>
+    <div class="challenge-item__body">
+        <p>
+          First I had to mount the Cranberry Pi:
+        </p>
+        <div class="code">
+          fdisk -l cranbian-jessie.img<br/>
+          echo $((512*137216))<br/>
+          mkdir cranbian<br/>
+          mount -v -o offset=70254592 -t ext4 cranbian-jessie.img cranbian/<br/>
+        </div>
+        <p>
+          Next I searched for a password which I found in via a hash in the shadow file, which was then sent to John The Ripper:
+        </p>  
+        <img src="images/cranpi-jtr.png"/>
+        <div class="code">
+            yummycookies
+        </div>
+    </div>
+  </article>
+
+  <hr/>
+
+  <article class="challenge-item">
+    <div class="challenge-item__title">
+        6) How did you open each terminal door and where had the villain imprisoned Santa?
+    </div>
+    <div class="challenge-item__body">
+      <img src="images/terminals-local.png"/>
+      <p>
+        At this point I don't really know which terminal I tried first. Whatever the first terminal was I inspected the source in firefox dev tools and saw I was dealing with docker via the terminals url "https://docker2016.holidayhackchallenge.com:port". Now I knew without doing a thing that this was a docker instance as well as its port number. I iterated through some various ports manually in another browser tab and very quickly had all the terminal addresses. I wrote an html page with 5 iframes which loaded all off the terminals on one page. I also added a js function to reload the selected frame to fill my monitors screen. The nice side-effect of this is that I no longer had to login to work on the terminals so I didn't need to worry about my session timing out. I would do work at my own pace on whatever terminal I liked at the moment and then logged in once I found the solution to gain access to the doors.
+      </p>
+      <p class="inner-item__head">
+        TERMINAL: TRAIN<br/>
+        PORT: 0001
+      </p>
+      <div class="table">
+        <div class="tr">
+          <div class="td">
+            <img src="images/TRAIN-dump.png"/>      
+          </div>
+          <div class="td">
+            <img src="images/TRAIN-timetravel.png"/>
+          </div>
+        </div>
+      </div>
+      
+      <p>
+        I didn't really know where to begin so I figured some manually fuzzing appropriate. Haha, basically I just typed 'HELP' and then mashed the keyboard a bunch. Pretty quickly I had a prompt and then began digging. Pretty quickly I found out that the console was a LESS application which I knew/know nothing about. This prompted me to do some research and I realized that '!' is my escape key. Good to know.
+      </p>
+      <p>
+        After a quick list I found the Train_Console and used strings on it, scrolled up and found the password. Below are the steps:
+      </p>
+      <div class="code">
+        HELP<br/>
+        ! to get shell<br/>
+        ls -al<br/>
+        strings Train_Console<br/>
+        grab password: 24fb3e89ce2aa0ea422c3d511d40dd84<br/>
+        restart console<br/>
+        BRAKEOFF<br/>
+        START<br/>
+        enter password<br/>
+        Enter<br/>
+      </div>
+      <p class="inner-item__head">
+        TERMINAL: PCAP<br/>
+        PORT: 0002
+      </p>
+
+      <p> 
+        I started out by searching the instance to see what information could be found, whatever it might be:
+      </p>
+      <div class="code">
+        ls -al
+      </div>
+      <p>
+        Right off I found out.pcap and tried to use strings on it but was denied permission so I checked to see what permissions I may have.
+      </p>
+      <div class="code">
+        scratchy@79e6d409e29a:/$ sudo -l<br/>
+        Matching Defaults entries for scratchy on 79e6d409e29a:<br/>
+        &nbsp;&nbsp;env_reset, mail_badpass,secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin<br/>
+        <br/>
+        User scratchy may run the following commands on 79e6d409e29a:<br/>
+        &nbsp;&nbsp;(itchy) NOPASSWD: /usr/sbin/tcpdump<br/>
+        &nbsp;&nbsp;(itchy) NOPASSWD: /usr/bin/strings<br/>
+      </div>
+      <p> 
+        This gave me what i was able to call without a password, specifically user itchy could use strings. After some trial and error as well as some IRC discussion and research I ran:
+      </p>
+      <div class="code">
+        sudo -u itchy strings /out.pcap
+      </div>
+      <p>
+        This spit out the strings for a partially encoded pcap file. What wasn't encoded was an html form with an input whose name(id?) was "part1" and whose value was "santasli"
+      </p>
+      <p>
+        So the next step was to decode the rest of the pcap. Obviously I started off thinking way too hard and started a python solution. Before I got too far with this though, in my research I realized that strings can also encode the strings returned. After a little trial and error I wound up at littleendian or -e l.
+      </p>
+      <div class="code">
+        sudo -u itchy strings -e l /out.pcap
+      </div>
+      <p>
+        This spit out...
+      </p>
+      <div class="code">
+        part2:ttlehelper
+      </div>
+      <p>
+        Putting the value of parts 1 and 2 together I arrived at:
+      </p>
+      <div class="code">
+        santaslittlehelper
+      </div>
+      <p class="inner-item__head">
+        TERMINAL: HIDDEN PASSCODE<br/>
+        PORT: 0003
+      </p>
+      <p>
+        After listing everything...
+      </p>
+      <div class="code">
+        ls -alR
+      </div>
+      <p>
+        I copied the output into a text editor and searched for words like "pass" and "key". I found an entry of "key_for_the_door.txt" as well as its location. Right off I knew what to do so it was just a matter of working through escapes. Took a little StackOverflow but I got there in reasonable time.
+      </p>
+      <div class="code">
+      cd ./.doormat/.\ /\ /\\\/\\\\/Don\'t\ Look\ Here\!/You\ are\ persistent,\ aren\'t\ you?/"'";
+      cat key_for_the_door.txt
+      </div>
+      <p>
+        Gave me:
+      </p>
+      <div class="code">
+        key: open_sesame
+      </div>
+      <p class="inner-item__head">
+        TERMINAL: WUMPUS<br/>
+        PORT: 0004
+      </p>
+      <p>
+        I just played wumpus. It took a few tries but I realized, after several deaths by the wumpus that if I simply fired arrows when I smelled the wumpus I won. I'll be back to hack you wumpus!  
+      </p>
+      <div class="code">
+      "WUMPUS IS MISUNDERSTOOD"
+      </div>
+      <p class="inner-item__head">
+        TERMINAL: FALKEN<br/>
+        PORT: 0005
+      </p>
+      <p>
+        I instantly got the reference but got caught up on the text. I searched YouTube for "Shall we play a game" and watched that clip taking notes on the text on screen. That was my mistake. For one line at least. I tried typing exactly what was on the screen. For the most part this was correct. The line which got me, in the movie screen text reads "People sometimes make mistak". I tried it a million times thinking I was making a typo of a typo haha. Turns out if I took the formatting and punctuation from other lines and then use the spoken text it worked "People sometimes make mistakes."
+      </p>
+  
+      <p>
+       It was then just a matter of playing through...
+      </p>
+      <div class="code">
+        Hello.<br/>
+        I'm fine. How are you?<br/>
+        People sometimes make mistakes.<br/>
+        Love to. How about Global Thermonuclear War?<br/>
+        Later. Let's play Global Thermonuclear War.<br/>
+        2<br/>
+        Las Vegas<br/>
+      </div>
+      <p>
+        Santa was imprisoned in NOV 16 1978 10:21 in DFER [Dungeon For Errant Reindeer]
+      </p>
+        
+    </div>
+
+  </article>  
+
+  <hr/>
+
+  <article class="challenge-item">
+    <div class="challenge-item__title">
+      7) ONCE YOU GET APPROVAL OF GIVEN IN-SCOPE TARGET IP ADDRESSES FROM TOM HESSMAN AT THE NORTH POLE, ATTEMPT TO REMOTELY EXPLOIT EACH OF THE FOLLOWING TARGETS:
+    <p>
+      For each of those six items, which vulnerabilities did you discover and exploit?  
+    </p>
+    </div>
+    <div class="challenge-item__body">
+    <p>
+      The first step was to get Tom's approval of my IP targets. I used nslookup on the domains I found in the apk via jadX:
+    </p>
+    <div class="code">
+        nslookup.......
+    </div>
+    <hr/>
+    <p>
+      The Mobile Analytics Server (via credentialed login access)<br/>
+      <br/>
+      PART 1:<br/>
+      I took a wild guess and tried the guest:busyreindeer78 password combo because at this point it was all I really had for credentials. It worked!<br/>
+      <br/>
+      I was logged in and obviously the first thing I did was download the mp3
+      discombobulatedaudio2.mp3<br/>
+      <br/>
+      PART 2:<br/>
+      I knew by reading the story as well as just by observing this 1st mp3 download process and inspecting the DOM that there was more to this server than just 1 audio file because of the id which launched the download. I made the assumption that a different id would give me a different mp3 file. Seemed reasonable and i went on that.<br/>
+      <br/>
+      So I began to dig deeper into the server and what was on it.<br/>
+      <img src="images/git-browser.png" class="invert" />
+      nmap found a .git directory<br/>
+      
+      git init<br/>
+      Reinitialized existing Git repository...<br/>
+      <br/>
+      After finding the hidden git folder I used wget to pull it down locally:<br/>
+      <br/>
+      <div class="code">
+        wget --no-check-certificate -r https://104.198.252.157:443/.git/
+      </div>
+      <br/>
+      Being a git directory I figured the best thing to do was speak its language and initialized the folder: 
+      <div class="code">
+        git init
+      </div>
+      Now I could inspect with the various built in git tools:<br/>
+      <div class="code">
+      git diff<br/>
+      git log<br/>
+      git show<br/>
+      git status<br/>
+      </div>
+      <br/>
+      A huge amount of information spilled out so I began by skimming through manually just to have a look. I initially searched for entry heads using "@@ " as my search term. This way I could skip past the various frameworks and their css and javascript files and look for more obvious interesting things.<br/>
+      <br/>
+      Fairly quickly I found two rules which described user based permissions. Specifically that "guest" was only allowed to download and "administrator" had access to edit.php. I already knew the password for "guest" as well as downloaded the 2nd audio file. What I did not already know is that there was a user name of "administrator" or that this account had editing permissions. Good find. I imagined unlikely, but I was now looking for a password or some reference to it which I could then use to login with. It also struck me at this point that it was possible that I was looking for a cookie value or possibly a uuid. More sleuthing was needed.<br/>
+      <br/>
+      Another piece, or rather pieces of information I found were sql queries. An example is:<br/>
+      <div class="code">
+      $result = query($db, "SELECT * FROM `audio` WHERE `id` = '" . mysqli_real_escape_string($db, $_GET['id']) . "' and `username` = '" . mysqli_real_escape_string($db, $username) . "'");
+      </div>
+      <br/>
+      This told me a lot. I now have a database table name as well row descriptors. In addition I now know at least one way they are protecting themselves from injection.<br/>
+      <br/>
+      The php files where telling me a lot actually in the way of how to use the site and how it functions. With just the guest credentials and no git directory it was a little hard to grasp exactly what one could do with this site aside from the 2nd audio file and basic queries.<br/>
+    </p>
+    </div>
+  </article>
+
+  <hr/>
+
+  <article class="challenge-item">
+    <div class="challenge-item__title">
+      The Dungeon Game
+    </div>
+    <div class="challenge-item__body">
+    <p>
+      Through my earlier nmap scan I found an open telnet port assigned to 11111. I connected to it using ncat and found the server version of the game.
+    </p>
+    <div class="code">
+        ncat -o -s 35.184.47.139 11111<br/>
+    </div>
+    <p>
+      Hmmm. Why two versions? After playing the version the elf gave me a couple of times and not really getting anywhere, it seemed like I should really research the game a little as well as play on the server. In reading about dungeon/zork online as well as inspecting the binary and dat the elf gave me I pretty quickly came to the conclusion that the dat held what I needed. Now it was a matter of accessing it since it was encoded.<br/>
+      <br/>
+      In this initial research I learned about incantations. Specifically a way to jump to the end of the game...<br/>
+    </p>
+    <div class="code">
+      incant, DNZHUO IDEQTQ
+    </div>
+      <p>
+        I thought this was what I was after and so played through and became Dungeon Master. Nothing useful though other than a great sense of nostalgia haha.<br/>
+        <br/>
+        Through more playing and research I learned about Ian Taylor and poked around more focused on him. Pretty quickly I found the source to the game on github and the README mentioned a decoder tool. A few links later I found myself with the code to Ians decoder in the form of a c file. It was cdungeon-decoder.c to be precise. Using gcc I compiled the decoder but it just kept spitting out the usage and wouldn't take my input. I did get it to spit out a file but it was blank. There were several syntax warnings in the build as well as a straight up error. Instead of slogging through very old code I decided to look for more information on the game in general.<br/>
+        <br/>
+        After searching a bit I found what I was looking for in the form of GDT commands. There were a bunch of them but "DT" was the most interesting right off the bat. "DT" allowed me to enter an integer and it would spit out a line of text. Figuring it was chronological I looked for the highest integer which returned a line of text. In less than a minute I found it to be 1024 and it was quite obvious that is exactly the line I was looking for.<br/>
+      </p>
+      <div class="code">
+        GDT>DT<br/>
+        Entry:    1024<br/>
+        The elf, satisified with the trade says -<br/>
+        send email to "peppermint@northpolewonderland.com" for that which you seek.<br/>
+      </div>
+      <p>
+        So I did send an email and within a minute or so got a reply with the 3rd piece of audio, discombobulatedaudio3.mp3. YAY!
+      </p>
+    </div>
+  </article>
+
+  <hr/>
+  
+  <article>
+    <div class="challenge-item__title">
+        The Debug Server
+    </div>
+    <div class="challenge-item__body">
+      <div class="code">
+        I didn't have time for this challenge :[
+      </div>
+    </div>
+  </article>
+
+  <hr/>
+  
+  <article>
+    <div class="challenge-item__title">
+        The Banner Ad Server
+    </div>
+    <div class="challenge-item__body">
+      <div class="code">
+        I didn't have time for this challenge :[
+      </div>
+    </div>
+  </article>
+
+  <hr/>
+
+  <article>
+    <div class="challenge-item__title">
+        The Uncaught Exception Handler Server
+    </div>
+    <div class="challenge-item__body">
+      <div class="code">
+        I didn't have time for this challenge :[
+      </div>
+    </div>
+  </article>
+
+  <hr/>
+
+  <article>
+    <div class="challenge-item__title">
+        The Mobile Analytics Server (post authentication)
+    </div>
+    <div class="challenge-item__body">
+      <img src="images/ANA2.png"/>
+      <p>
+        After looking through the git diffs I found the Cookie generator function as well as the encrypt function and its key definition. I grabbed these functions and put together my own php page to generate a cookie with the username of 'administrator' and then replaced my 'guest' cookie with the result in Burp Suite. 
+      </p>
+      <img src="images/cookie-gen.png"/>
+      <p>
+        This gave me access to edit.php. I also noticed this was a GET request and decided to try sending other known params like name and description as revealed by the form on edit.php.
+      </p>
+      <p>
+        I wondered what I could edit and tried a few attempts to access reports via their id revealed using the site query UI. I had no luck and just received sql errors. 
+      </p>
+      <p>
+        In looking at sprusage.sql I then realized that I was missing a parameter in my Burp repeater, "query". I also remembered that I had the ability to save queries which gave me a valid id. I saved a query with current data and uuid ≠ -1. After adding this I was sent down in the code block, out of the sql error catch, finally getting "Yup!" results. I then refreshed my saved query and saw my params printed there on the page, though my query param was still getting complaints. It didn't take me long to realize i forgot to add a table name so I added in `audio`. All my errors went away and I was shown a table with two entries for guest and administrator populated with unique ids for discombobulatedaudio2 & discombobulatedaudio7. 
+      </p>
+      <img src="images/ANA2-users.png"/>
+      <p>
+        I got stuck on how to actually grab the mp3 file so I took another look through "sprusage.sql":
+      <img src="images/table-users.png"/>
+        Based upon what  found, I altered my query to target the `users` table to see what's up with the password field. I found the "administrator" password in clear text:
+      </p>
+      <div class="code">
+        KeepWatchingTheSkies
+      </div>
+      <p>
+        Now I actually know the "administrator" password. Before I was using my generated cookie after logging in as guest.
+      </p>
+      <p>
+        I also looked closer at what what going on in getaudio.php:
+      </p>
+      <img src="images/getaudio.php.png">
+      <p>
+        It told me that only guest can down load a file but only a file the user has the id for. It seemed to me at the time that I won't be able to grab the audio this way. So I used "SELECT TO_BASE64(`mp3`) FROM `audio`" as my query and low and behold:
+      </p>
+      <img src="images/base64-audio7.png"/>
+      <p>
+        Now the trick is to decode it.
+      </p>
+      <p>
+        I initially tried:
+      </p>
+      <div class="code">
+        openssl base64 -in discombobulatesaudio7BASE64_full.txt -out discombobulatedaudio7.mp3
+      </div>
+      <p>
+        Unfortunately this mp3 would not open in any audio player i had. I guess we'll try hex:
+      </p>
+      <img src="images/audio7-hex.png">
+    </div>
+  </article>
+
+  <hr/>
+
+  <article class="challenge-item">
+    <div class="challenge-item__title">
+      Audio
+    </div>
+    <div class="challenge-item__body">
+      <p>
+        Unfortunately, since I didn't complete all of the challenges, I didn't get all of the audio files, howver here is some of the processing and analysis I put to the ones I did get.
+      </p>
+      <img src="images/audio-3.png"/>
+      <p>
+        To break this down a bit, the first audio file sounded like it was saying something though it was masked by background noise and it sounded pitched or stretched. Sure enough after setting the time to 21% and isolating the center channel to cut back on some of the backgrond noise, I could clearly make out "Merry Chris". The "Merry" was a bit less clear but it was there. From this point I assumed I would apply the same timing to the rest of the audio files and line them up to hear a full sentence. I also used spectral analysis to see if there were any images, words, clues of any sort but I did not find any.
+      </p>
+      <br/>
+    </div>
+  </article>
+
+<hr/>
+
+  <article class="challenge-item">
+  <div class="challenge-item__title">
+    9) Who is the villain behind the nefarious plot.
+  </div>
+  <div class="challenge-item__body">
+    <div class="code">
+      Daemons?
+    </div>
+  </div>
+  </article>
+
+  <hr/>
+
+  <article class="challenge-item">
+  <div class="challenge-item__title">
+    10) Why had the villain abducted Santa?
+  </div>
+  <div class="challenge-item__body">
+    <div class="code">
+        For the lulz? ;P
+    </div>
+  </div>
+  </article>
+
+
+</div>
+</body>
+</html>
