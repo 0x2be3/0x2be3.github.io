@@ -67,13 +67,11 @@ img{
 }
 @media(max-width: 768px){
  pre.header-ascii{
-  color: #f90;
   font-size: 0.45em;
  } 
 }
 @media(max-width: 690px){
  pre.header-ascii{
-  color: #f90;
   font-size: 0.35em;
  } 
 }
